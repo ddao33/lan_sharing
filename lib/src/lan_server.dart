@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 
-import 'package:lan_sharing/src/client_message.dart';
+import 'package:lan_sharing/src/model/client_message.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
 enum ServerState { stopped, starting, running, stopping }

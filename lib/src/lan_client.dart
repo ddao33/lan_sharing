@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:async';
 
-import 'package:lan_sharing/src/client_message.dart';
-import 'package:lan_sharing/src/ip_helper.dart';
+import 'package:lan_sharing/src/model/client_message.dart';
+import 'package:lan_sharing/src/utils/dicovery_service.dart';
 
 enum ClientState { disconnected, connecting, connected }
 
@@ -47,9 +47,7 @@ class LanClient {
     }
   }
 
-  /// Attempt to connect to a specific IP address
   Future<bool> tryConnect(String ipAddress) async {
-    _stateController.add(ClientState.connecting);
     try {
       socket = await Socket.connect(ipAddress, port, timeout: timeout);
       socket?.listen((event) {
@@ -62,44 +60,8 @@ class LanClient {
     }
   }
 
-  /// Automatically find the server by scanning the local subnet in parallel
   Future<String?> findServer() async {
-    String? localIp = await IpHelper.getLocalIpAddress();
-    if (localIp == null) {
-      print('Unable to determine local IP address');
-      return null;
-    }
-
-    String? subnet = IpHelper.extractSubnet(localIp);
-    if (subnet == null) {
-      print('Unable to determine subnet');
-      return null;
-    }
-
-    print('Scanning network on subnet: $subnet');
-
-    // Create a list of IP addresses to scan
-    List<String> ipAddresses = List.generate(254, (i) => '$subnet${i + 1}');
-
-    // Perform parallel connection attempts
-    List<Future<bool>> connectionAttempts =
-        ipAddresses.map((ip) => tryConnect(ip)).toList();
-
-    // Wait for all connection attempts
-    List<bool> results = await Future.wait(connectionAttempts);
-
-    // Check which IP addresses were successful
-    for (int i = 0; i < results.length; i++) {
-      if (results[i]) {
-        print('Connected to server at ${ipAddresses[i]}:$port');
-        _stateController.add(ClientState.connected);
-        return ipAddresses[i];
-      }
-    }
-
-    print('Server not found on the network');
-    _stateController.add(ClientState.disconnected);
-    return null;
+    return await discoverOnLan(tryConnect);
   }
 
   void dispose() {
