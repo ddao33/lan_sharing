@@ -19,7 +19,9 @@ class _LanServerFounderState extends State<LanServerFounder> {
   @override
   void initState() {
     super.initState();
-    tryConnect();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      tryConnect();
+    });
   }
 
   void tryConnect() async {
