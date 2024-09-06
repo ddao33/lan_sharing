@@ -152,3 +152,9 @@ class LanServer {
     _connectedClientsController.close();
   }
 }
+
+extension LanServerExtension on Socket {
+  void addUtf8String(String string) {
+    add(utf8.encode(string));
+  }
+}
