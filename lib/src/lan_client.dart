@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:lan_sharing/src/model/client_message.dart';
 import 'package:lan_sharing/src/utils/dicovery_service.dart';
@@ -9,7 +10,7 @@ enum ClientState { disconnected, connecting, connected }
 class LanClient {
   final int port;
   final Duration timeout;
-  final Function(String message) onMessage;
+  final void Function(Uint8List data)? onData;
   Socket? socket;
 
   final StreamController<ClientState> _stateController =
@@ -22,7 +23,7 @@ class LanClient {
     this.timeout = const Duration(
       milliseconds: 900,
     ),
-    required this.onMessage,
+    required this.onData,
   }) {
     _stateController.add(ClientState.disconnected);
   }
@@ -50,10 +51,7 @@ class LanClient {
   Future<bool> tryConnect(String ipAddress) async {
     try {
       socket = await Socket.connect(ipAddress, port, timeout: timeout);
-      socket?.listen((event) {
-        onMessage(String.fromCharCodes(event));
-      });
-
+      socket?.listen(onData);
       return true;
     } catch (e) {
       return false;
