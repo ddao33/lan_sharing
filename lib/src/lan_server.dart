@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 
@@ -7,7 +8,6 @@ import 'package:network_info_plus/network_info_plus.dart';
 enum ServerState { stopped, starting, running, stopping }
 
 class LanServer {
-  int port;
   ServerSocket? _serverSocket;
 
   String? _ipAddress;
@@ -24,14 +24,13 @@ class LanServer {
       StreamController<Set<String>>.broadcast();
   final Set<String> _connectedClients = {};
 
-  static final LanServer _instance = LanServer._internal(3000);
+  static final LanServer _instance = LanServer._internal();
 
-  factory LanServer({required int port}) {
-    _instance.port = port;
+  factory LanServer() {
     return _instance;
   }
 
-  LanServer._internal(this.port) {
+  LanServer._internal() {
     _stateController.add(ServerState.stopped);
     _connectedClientsController.add(_connectedClients);
   }
@@ -49,7 +48,7 @@ class LanServer {
     _endpoints[endpoint] = handler;
   }
 
-  Future<void> start() async {
+  Future<void> start({required int port}) async {
     if (_serverSocket != null) {
       print('Server is already running');
       return;
