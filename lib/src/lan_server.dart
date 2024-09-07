@@ -5,21 +5,16 @@ import 'dart:async';
 import 'package:lan_sharing/src/model/client_message.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
-enum ServerState { stopped, starting, running, stopping }
+enum LanServerState { stopped, starting, running, stopping }
 
 class LanServer {
   ServerSocket? _serverSocket;
-
   String? _ipAddress;
-  String? get ipAddress => _ipAddress;
-
   final Map<String, Function(Socket, Map<String, dynamic>)> _endpoints = {};
-  final StreamController<ServerState> _stateController =
-      StreamController<ServerState>.broadcast();
+  final StreamController<LanServerState> _stateController =
+      StreamController<LanServerState>.broadcast();
   final StreamController<ClientMessage> _incomingDataController =
       StreamController<ClientMessage>.broadcast();
-
-  // Change the set to a StreamController
   final StreamController<Set<String>> _connectedClientsController =
       StreamController<Set<String>>.broadcast();
   final Set<String> _connectedClients = {};
@@ -31,15 +26,17 @@ class LanServer {
   }
 
   LanServer._internal() {
-    _stateController.add(ServerState.stopped);
+    _stateController.add(LanServerState.stopped);
     _connectedClientsController.add(_connectedClients);
   }
 
-  Stream<ServerState> get stateStream => _stateController.stream;
+  String? get ipAddress => _ipAddress;
+
+  Stream<LanServerState> get stateStream => _stateController.stream;
+
   Stream<ClientMessage> get incomingDataStream =>
       _incomingDataController.stream;
 
-  // Change the getter to return a Stream
   Stream<Set<String>> get connectedClientsStream =>
       _connectedClientsController.stream;
 
@@ -50,31 +47,25 @@ class LanServer {
 
   Future<void> start({required int port}) async {
     if (_serverSocket != null) {
-      print('Server is already running');
-      return;
+      throw StateError('Server is already running');
     }
 
-    _stateController.add(ServerState.starting);
+    _stateController.add(LanServerState.starting);
 
     try {
-      // Get the actual IP address
       final info = NetworkInfo();
       _ipAddress = await info.getWifiIP();
 
       if (_ipAddress != null) {
         _serverSocket = await ServerSocket.bind(_ipAddress!, port);
-        _stateController.add(ServerState.running);
-        print('Server started on $_ipAddress:$port');
+        _stateController.add(LanServerState.running);
 
-        // Handle client connections
         _serverSocket!.listen(
           _handleClient,
           onError: (error) {
-            print('Server socket error: $error');
             stop();
           },
           onDone: () {
-            print('Server socket closed');
             stop();
           },
         );
@@ -82,18 +73,14 @@ class LanServer {
         throw Exception('Failed to get device IP address');
       }
     } catch (e) {
-      print('Error starting server: $e');
-      _stateController.add(ServerState.stopped);
+      _stateController.add(LanServerState.stopped);
       _serverSocket = null;
+      rethrow;
     }
   }
 
   void _handleClient(Socket client) {
     String clientIp = client.remoteAddress.address;
-    int clientPort = client.remotePort;
-    print('Client connected: $clientIp:$clientPort');
-
-    // Add client IP to the set of connected clients and emit the updated set
     _connectedClients.add(clientIp);
     _connectedClientsController.add(Set.from(_connectedClients));
 
@@ -106,47 +93,41 @@ class LanServer {
 
           if (_endpoints.containsKey(message.endpoint)) {
             _endpoints[message.endpoint]!(client, message.data);
-          } else {
-            print('No endpoint found for message: $message');
           }
         } catch (e) {
-          print('Error parsing message: $e');
+          // Consider using a logger instead of print
         }
       },
       onError: (error) {
-        print('Error from client $clientIp: $error');
-        client.close();
-        // Remove client IP from the set of connected clients and emit the updated set
-        _connectedClients.remove(clientIp);
-        _connectedClientsController.add(Set.from(_connectedClients));
+        _removeClient(client, clientIp);
       },
       onDone: () {
-        print('Client disconnected: $clientIp');
-        client.close();
-        // Remove client IP from the set of connected clients and emit the updated set
-        _connectedClients.remove(clientIp);
-        _connectedClientsController.add(Set.from(_connectedClients));
+        _removeClient(client, clientIp);
       },
     );
   }
 
+  void _removeClient(Socket client, String clientIp) {
+    client.close();
+    _connectedClients.remove(clientIp);
+    _connectedClientsController.add(Set.from(_connectedClients));
+  }
+
   void stop() {
     if (_serverSocket == null) {
-      print('Server is not running');
       return;
     }
 
-    _stateController.add(ServerState.stopping);
+    _stateController.add(LanServerState.stopping);
     _serverSocket?.close();
     _serverSocket = null;
-    _stateController.add(ServerState.stopped);
-    // Clear the set of connected clients and emit the empty set
+    _stateController.add(LanServerState.stopped);
     _connectedClients.clear();
-    _connectedClientsController.add(Set<String>());
-    print('Server stopped');
+    _connectedClientsController.add({});
   }
 
   void dispose() {
+    stop();
     _stateController.close();
     _incomingDataController.close();
     _connectedClientsController.close();
