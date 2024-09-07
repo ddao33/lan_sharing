@@ -21,7 +21,7 @@ class LanClient {
   Stream<ClientState> get stateStream => _stateController.stream;
 
   LanClient({
-    required this.port,
+    this.port = lanServerDefaultPort,
     this.timeout = const Duration(
       milliseconds: 900,
     ),

@@ -47,3 +47,5 @@ Future<String?> discoverOnLan(TryFunction tryFunction) async {
 
   return null;
 }
+
+const lanServerDefaultPort = 13145;

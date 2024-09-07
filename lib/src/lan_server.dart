@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:lan_sharing/src/model/client_message.dart';
+import 'package:lan_sharing/src/utils/dicovery_service.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
 enum LanServerState { stopped, starting, running, stopping }
@@ -45,7 +46,7 @@ class LanServer {
     _endpoints[endpoint] = handler;
   }
 
-  Future<void> start({required int port}) async {
+  Future<void> start({int port = lanServerDefaultPort}) async {
     if (_serverSocket != null) {
       throw StateError('Server is already running');
     }
