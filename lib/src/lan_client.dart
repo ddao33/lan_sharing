@@ -13,6 +13,8 @@ class LanClient {
   final void Function(Uint8List data)? onData;
   Socket? socket;
 
+  String? get serverIp => socket?.remoteAddress.address;
+
   final StreamController<ClientState> _stateController =
       StreamController<ClientState>.broadcast();
 
@@ -59,7 +61,14 @@ class LanClient {
   }
 
   Future<String?> findServer() async {
-    return await discoverOnLan(tryConnect);
+    _stateController.add(ClientState.connecting);
+    final serverIp = await discoverOnLan(tryConnect);
+    if (serverIp != null) {
+      _stateController.add(ClientState.connected);
+      return serverIp;
+    }
+    _stateController.add(ClientState.disconnected);
+    return null;
   }
 
   void dispose() {
