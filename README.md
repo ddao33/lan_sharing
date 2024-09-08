@@ -19,54 +19,37 @@ dependencies:
 Then, run flutter pub get to install the package.
 
 # Usage
-## Setting up the Server
-You can easily set up a server within your app. The server will listen for incoming client requests on a specified port.
+
+## Setup Server 
 
 ```dart
 import 'package:lan_sharing/lan_sharing.dart';
 
-void startServer() async {
-  final server = await LanServer.start(port: 8080);
+// Initialize the server
+final server = LanServer()..start();
   
-  server.listen((request) {
-    // Handle incoming requests and send responses
-    final response = server.createResponse(
-      statusCode: 200,
-      body: 'Hello from the server!',
-    );
-    request.respond(response);
-  });
-}
-Connecting as a Client
-A client can be used to hit the server and retrieve data.
 
-dart
-```dart
-import 'package:lan_sharing/lan_sharing.dart';
+// Add an endpoint to the server
+LanServer().addEndpoint('/test', (socket, data) {
+  socket.addUtf8String('Hello THIS IS FROM TEST');
+});
 
-void connectToServer() async {
-  final client = LanClient(host: '192.168.0.10', port: 8080);
-  
-  final response = await client.get('/'); // Make a GET request
-  print('Response: ${response.body}');
-}
-Sending Data Between Devices
-You can send different types of data, including JSON, plain text, and files.
+```
+
+## Setup Client
 
 ```dart
 import 'package:lan_sharing/lan_sharing.dart';
 
-void sendData() async {
-  final client = LanClient(host: '192.168.0.10', port: 8080);
-  
-  final response = await client.post('/data', body: {'key': 'value'}); // POST request
-  print('Response: ${response.body}');
-}
-Stopping the Server
-When you no longer need the server, you can stop it:
+// Initialize the client
+final client = LanClient();
 
-```dart
-server.stop();
+// Try to find the server on the local network
+await client.findServer();
+
+// Send a message to the server
+await client.sendMessage(endpoint: '/test', data: {'message': 'Hello Server!'});
+
 ```
 
 # Contributions
