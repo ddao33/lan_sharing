@@ -3,9 +3,8 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:lan_sharing/src/model/client_message.dart';
+import 'package:lan_sharing/src/model/client_socket_response.dart';
 import 'package:lan_sharing/src/utils/dicovery_service.dart';
-
-enum ClientState { disconnected, connecting, connected }
 
 class LanClient {
   final int port;
@@ -15,10 +14,10 @@ class LanClient {
 
   String? get serverIp => socket?.remoteAddress.address;
 
-  final StreamController<ClientState> _stateController =
-      StreamController<ClientState>.broadcast();
+  final StreamController<ClientSocketState> _stateController =
+      StreamController<ClientSocketState>.broadcast();
 
-  Stream<ClientState> get stateStream => _stateController.stream;
+  Stream<ClientSocketState> get stateStream => _stateController.stream;
 
   LanClient({
     this.port = lanServerDefaultPort,
@@ -27,7 +26,7 @@ class LanClient {
     ),
     required this.onData,
   }) {
-    _stateController.add(ClientState.disconnected);
+    _stateController.add(ClientSocketState.disconnected(''));
   }
 
   Future<void> sendMessage({
@@ -35,7 +34,7 @@ class LanClient {
     required Map<String, dynamic> data,
   }) async {
     if (socket == null) {
-      _stateController.add(ClientState.disconnected);
+      _stateController.add(ClientSocketState.disconnected(''));
       return;
     }
     try {
@@ -43,10 +42,9 @@ class LanClient {
       final jsonMessage = message.toJson();
       final encodedMessage = jsonMessage.codeUnits;
       socket?.add(encodedMessage);
-      _stateController.add(ClientState.connected);
+      _stateController.add(ClientSocketState.connected());
     } catch (e) {
-      _stateController.add(ClientState.disconnected);
-      print('Error sending message: $e');
+      _stateController.add(ClientSocketState.disconnected(e.toString()));
     }
   }
 
@@ -60,20 +58,22 @@ class LanClient {
     }
   }
 
+  /// Find a server on the local network by broadcasting a discovery message and listening for responses.
+  /// Returns the IP address of the server if found, otherwise returns null.
   Future<String?> findServer() async {
-    _stateController.add(ClientState.connecting);
+    _stateController.add(ClientSocketState.connecting());
     final serverIp = await discoverOnLan(tryConnect);
     if (serverIp != null) {
-      _stateController.add(ClientState.connected);
+      _stateController.add(ClientSocketState.connected());
       return serverIp;
     }
-    _stateController.add(ClientState.disconnected);
+    _stateController.add(ClientSocketState.disconnected(''));
     return null;
   }
 
   void dispose() {
     socket?.destroy();
     socket = null;
-    _stateController.add(ClientState.disconnected);
+    _stateController.add(ClientSocketState.disconnected(''));
   }
 }
