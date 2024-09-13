@@ -1,7 +1,7 @@
 name: lan_sharing
-description: "A new Flutter package project."
+description: "A flutter package for quickly create lan sharing functionality."
 version: 0.1.0
-homepage:
+homepage: https://github.com/ddao33/lan_sharing
 
 environment:
   sdk: ^3.5.1
