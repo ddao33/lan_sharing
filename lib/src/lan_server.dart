@@ -9,6 +9,7 @@ import 'package:network_info_plus/network_info_plus.dart';
 enum LanServerState { stopped, starting, running, stopping }
 
 class LanServer {
+  static LanServer? _instance;
   ServerSocket? _serverSocket;
   String? _ipAddress;
   final Map<String, Function(Socket, Map<String, dynamic>)> _endpoints = {};
@@ -20,15 +21,13 @@ class LanServer {
       StreamController<Set<String>>.broadcast();
   final Set<String> _connectedClients = {};
 
-  static final LanServer _instance = LanServer._internal();
+  // Private constructor
+  LanServer._();
 
+  // Factory constructor
   factory LanServer() {
-    return _instance;
-  }
-
-  LanServer._internal() {
-    _stateController.add(LanServerState.stopped);
-    _connectedClientsController.add(_connectedClients);
+    _instance ??= LanServer._();
+    return _instance!;
   }
 
   String? get ipAddress => _ipAddress;
