@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
@@ -40,7 +41,7 @@ class LanClient {
     try {
       final message = ClientMessage(endpoint: endpoint, data: data);
       final jsonMessage = message.toJson();
-      final encodedMessage = jsonMessage.codeUnits;
+      final encodedMessage = utf8.encode(jsonMessage);
       socket?.add(encodedMessage);
       _stateController.add(ClientSocketState.connected());
     } catch (e) {

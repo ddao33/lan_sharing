@@ -88,8 +88,7 @@ class LanServer {
     client.listen(
       (data) {
         try {
-          ClientMessage message =
-              ClientMessage.fromJson(String.fromCharCodes(data));
+          ClientMessage message = ClientMessage.fromJson(utf8.decode(data));
           _incomingDataController.add(message);
 
           if (_endpoints.containsKey(message.endpoint)) {
