@@ -95,7 +95,7 @@ class LanServer {
             _endpoints[message.endpoint]!(client, message.data);
           }
         } catch (e) {
-          // Consider using a logger instead of print
+          // Skip the message if it's not a valid JSON
         }
       },
       onError: (error) {
