@@ -13,6 +13,8 @@ class LanClient {
   final void Function(Uint8List data)? onData;
   Socket? socket;
 
+  Completer<String>? _completer;
+
   String? get serverIp => socket?.remoteAddress.address;
 
   final StreamController<ClientSocketState> _stateController =
@@ -30,29 +32,38 @@ class LanClient {
     _stateController.add(ClientSocketState.disconnected(''));
   }
 
-  Future<void> sendMessage({
+  Future<String?> sendMessage({
     required String endpoint,
     required Map<String, dynamic> data,
   }) async {
     if (socket == null) {
       _stateController.add(ClientSocketState.disconnected(''));
-      return;
+      return null;
     }
     try {
+      _completer = Completer<String>();
       final message = ClientMessage(endpoint: endpoint, data: data);
       final jsonMessage = message.toJson();
       final encodedMessage = utf8.encode(jsonMessage);
       socket?.add(encodedMessage);
       _stateController.add(ClientSocketState.connected());
+      return _completer?.future;
     } catch (e) {
       _stateController.add(ClientSocketState.disconnected(e.toString()));
     }
+    return null;
   }
 
   Future<bool> tryConnect(String ipAddress) async {
     try {
       socket = await Socket.connect(ipAddress, port, timeout: timeout);
-      socket?.listen(onData);
+      socket?.listen((data) {
+        if (onData != null) {
+          onData!(data);
+        }
+
+        _completer!.complete(utf8.decode(data));
+      });
       return true;
     } catch (e) {
       return false;
