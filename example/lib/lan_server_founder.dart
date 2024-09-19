@@ -14,7 +14,7 @@ class _LanServerFounderState extends State<LanServerFounder> {
 
   late LanClient client = LanClient(onData: (data) {
     setState(() {
-      receivedMessage = utf8.decode(data);
+      receivedMessage = jsonDecode(utf8.decode(data)).toString();
     });
   });
 
@@ -44,15 +44,17 @@ class _LanServerFounderState extends State<LanServerFounder> {
           if (response.state == ClientSocketStatus.connected) {
             return ListView(
               children: [
-                Text('Server founded'),
+                const Text('Server founded'),
                 Text('Server IP: ${client.serverIp}:${client.port}'),
                 Text('Received Message: $receivedMessage'),
                 ElevatedButton(
-                  onPressed: () {
-                    client.sendMessage(
+                  onPressed: () async {
+                    final response = await client.sendMessage(
                       endpoint: '/test',
                       data: {},
                     );
+
+                    print('Response from sendMessage: $response');
                   },
                   child: const Text('Send Message'),
                 ),
@@ -63,7 +65,7 @@ class _LanServerFounderState extends State<LanServerFounder> {
           if (response.state == ClientSocketStatus.disconnected) {
             return ListView(
               children: [
-                Text('Server disconnected'),
+                const Text('Server disconnected'),
                 Text('Error: ${response.message}'),
               ],
             );

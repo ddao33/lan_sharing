@@ -10,7 +10,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('LAN Sharing'),
       ),
-      body: LanServerFounder(),
+      body: const LanServerFounder(),
     );
   }
 }
