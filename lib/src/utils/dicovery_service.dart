@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:lan_sharing/src/utils/ip_helper.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 
 typedef TryFunction = Future<bool> Function(String ipAddress);
 
@@ -17,7 +18,10 @@ typedef TryFunction = Future<bool> Function(String ipAddress);
 ///
 
 Future<String?> discoverOnLan(TryFunction tryFunction) async {
-  String? localIp = await IpHelper.getLocalIpAddress();
+  final info = NetworkInfo();
+
+  String? localIp = await info.getWifiIP();
+
   if (localIp == null) {
     throw Exception('Unable to determine local IP address');
   }
