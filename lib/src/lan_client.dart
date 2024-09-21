@@ -29,7 +29,7 @@ class LanClient {
     ),
     required this.onData,
   }) {
-    _stateController.add(ClientSocketState.disconnected(''));
+    _stateController.add(ClientSocketState.disconnected('Not Initialized'));
   }
 
   Future<String?> sendMessage({
@@ -79,13 +79,13 @@ class LanClient {
       _stateController.add(ClientSocketState.connected());
       return serverIp;
     }
-    _stateController.add(ClientSocketState.disconnected(''));
+    _stateController.add(ClientSocketState.disconnected('No server found'));
     return null;
   }
 
   void dispose() {
     socket?.destroy();
     socket = null;
-    _stateController.add(ClientSocketState.disconnected(''));
+    _stateController.add(ClientSocketState.disconnected('Destoryed'));
   }
 }
