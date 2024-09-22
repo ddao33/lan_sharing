@@ -1,29 +1,27 @@
-import 'dart:io';
+import 'package:network_info_plus/network_info_plus.dart';
 
 class IpHelper {
-  /// Get the local IP address and determine the subnet
-  static Future<String?> getLocalIpAddress() async {
-    List<NetworkInterface> interfaces = await NetworkInterface.list(
-      type: InternetAddressType.IPv4,
-      includeLoopback: false,
-    );
+  static final info = NetworkInfo();
 
-    for (var interface in interfaces) {
-      for (var address in interface.addresses) {
-        if (!address.isLoopback) {
-          return address.address;
-        }
-      }
-    }
-    return null;
+  static Future<String?> getLocalIpAddress() async {
+    return await info.getWifiIP();
   }
 
-  /// Extract the subnet from the local IP address (e.g., if IP is 192.168.1.12, subnet is 192.168.1.)
-  static String? extractSubnet(String ipAddress) {
-    List<String> parts = ipAddress.split('.');
-    if (parts.length == 4) {
-      return '${parts[0]}.${parts[1]}.${parts[2]}.';
+  /// Subnet mask 255.255.255.0
+  static List<String> getSubnetIps(String ipAddress) {
+    List<String> result = [];
+
+    List<String> octets = ipAddress.split('.');
+
+    if (octets.length != 4) {
+      throw Exception('Invalid IP address format');
     }
-    return null;
+
+    for (int i = 0; i < 256; i++) {
+      String newIP = '${octets[0]}.${octets[1]}.${octets[2]}.$i';
+      result.add(newIP);
+    }
+
+    return result;
   }
 }

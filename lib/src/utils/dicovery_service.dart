@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:lan_sharing/src/utils/ip_helper.dart';
-import 'package:network_info_plus/network_info_plus.dart';
 
 typedef TryFunction = Future<bool> Function(String ipAddress);
 
@@ -18,20 +17,13 @@ typedef TryFunction = Future<bool> Function(String ipAddress);
 ///
 
 Future<String?> discoverOnLan(TryFunction tryFunction) async {
-  final info = NetworkInfo();
-
-  String? localIp = await info.getWifiIP();
+  String? localIp = await IpHelper.getLocalIpAddress();
 
   if (localIp == null) {
     throw Exception('Unable to determine local IP address');
   }
 
-  String? subnet = IpHelper.extractSubnet(localIp);
-  if (subnet == null) {
-    throw Exception('Unable to determine subnet');
-  }
-
-  List<String> ipAddresses = List.generate(254, (i) => '$subnet${i + 1}');
+  List<String> ipAddresses = IpHelper.getSubnetIps(localIp);
 
   List<Future<String?>> discoveryFutures = ipAddresses.map((ip) async {
     bool result = await tryFunction(ip);
@@ -42,6 +34,7 @@ Future<String?> discoverOnLan(TryFunction tryFunction) async {
   }).toList();
 
   List<String?> results = await Future.wait(discoveryFutures);
+
   String? discoveredIp =
       results.firstWhere((ip) => ip != null, orElse: () => null);
 
