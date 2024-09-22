@@ -12,22 +12,16 @@ class LanServer {
   ServerSocket? _serverSocket;
   String? _ipAddress;
   final Map<String, Function(Socket, Map<String, dynamic>)> _endpoints = {};
-  final StreamController<LanServerState> _stateController =
-      StreamController<LanServerState>.broadcast();
   final StreamController<ClientMessage> _incomingDataController =
       StreamController<ClientMessage>.broadcast();
   final StreamController<Set<String>> _connectedClientsController =
       StreamController<Set<String>>.broadcast();
   final Set<String> _connectedClients = {};
+  LanServerState _currentState = LanServerState.stopped;
 
-  // Remove private constructor and static instance
   LanServer();
 
-  // Remove factory constructor
-
   String? get ipAddress => _ipAddress;
-
-  Stream<LanServerState> get stateStream => _stateController.stream;
 
   Stream<ClientMessage> get incomingDataStream =>
       _incomingDataController.stream;
@@ -40,12 +34,14 @@ class LanServer {
     _endpoints[endpoint] = handler;
   }
 
+  LanServerState get currentState => _currentState;
+
   Future<void> start({int port = lanServerDefaultPort}) async {
     if (_serverSocket != null) {
       return;
     }
 
-    _stateController.add(LanServerState.starting);
+    _updateState(LanServerState.starting);
 
     try {
       final info = NetworkInfo();
@@ -53,7 +49,7 @@ class LanServer {
 
       if (_ipAddress != null) {
         _serverSocket = await ServerSocket.bind(_ipAddress!, port);
-        _stateController.add(LanServerState.running);
+        _updateState(LanServerState.running);
 
         _serverSocket!.listen(
           _handleClient,
@@ -68,7 +64,7 @@ class LanServer {
         throw Exception('Failed to get device IP address');
       }
     } catch (e) {
-      _stateController.add(LanServerState.stopped);
+      _updateState(LanServerState.stopped);
       _serverSocket = null;
       rethrow;
     }
@@ -112,17 +108,20 @@ class LanServer {
       return;
     }
 
-    _stateController.add(LanServerState.stopping);
+    _updateState(LanServerState.stopping);
     _serverSocket?.close();
     _serverSocket = null;
-    _stateController.add(LanServerState.stopped);
+    _updateState(LanServerState.stopped);
     _connectedClients.clear();
     _connectedClientsController.add({});
   }
 
+  void _updateState(LanServerState newState) {
+    _currentState = newState;
+  }
+
   void dispose() {
     stop();
-    _stateController.close();
     _incomingDataController.close();
     _connectedClientsController.close();
   }

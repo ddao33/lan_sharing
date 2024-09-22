@@ -20,17 +20,12 @@ class LanServerBuilder extends StatefulWidget {
 class _LanServerBuilderState extends State<LanServerBuilder> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<LanServerState>(
-      stream: widget.lanServer.stateStream,
-      builder: (context, stateSnapshot) {
-        return StreamBuilder<Set<String>>(
-          stream: widget.lanServer.connectedClientsStream,
-          builder: (context, clientsSnapshot) {
-            final state = stateSnapshot.data ?? LanServerState.stopped;
-            final connectedIps = clientsSnapshot.data ?? <String>{};
-            return widget.builder(context, state, connectedIps);
-          },
-        );
+    return StreamBuilder<Set<String>>(
+      stream: widget.lanServer.connectedClientsStream,
+      builder: (context, clientsSnapshot) {
+        final state = widget.lanServer.currentState;
+        final connectedIps = clientsSnapshot.data ?? <String>{};
+        return widget.builder(context, state, connectedIps);
       },
     );
   }
