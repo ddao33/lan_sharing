@@ -10,7 +10,7 @@ import 'package:lan_sharing/src/utils/dicovery_service.dart';
 class LanClient {
   final int port;
   final Duration timeout;
-  final void Function(Uint8List data)? onData;
+  void Function(Uint8List data)? onData;
   Socket? socket;
 
   Completer<String>? _completer;
@@ -27,7 +27,7 @@ class LanClient {
     this.timeout = const Duration(
       milliseconds: 900,
     ),
-    required this.onData,
+    this.onData,
   }) {
     _stateController.add(ClientSocketState.disconnected('Not Initialized'));
   }
