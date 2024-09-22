@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:lan_sharing/src/model/client_message.dart';
 import 'package:lan_sharing/src/model/client_socket_response.dart';
 import 'package:lan_sharing/src/utils/dicovery_service.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 
 class LanClient {
   final int port;
@@ -54,27 +55,42 @@ class LanClient {
     return null;
   }
 
-  Future<bool> tryConnect(String ipAddress) async {
+  Future<bool> tryConnect(String ipAddress,
+      {void Function(dynamic)? onError}) async {
     try {
       socket = await Socket.connect(ipAddress, port, timeout: timeout);
-      socket?.listen((data) {
-        if (onData != null) {
-          onData!(data);
-        }
+      socket?.listen(
+        (data) {
+          if (onData != null) {
+            onData!(data);
+          }
 
-        _completer!.complete(utf8.decode(data));
-      });
+          _completer!.complete(utf8.decode(data));
+        },
+        onDone: () {
+          dispose();
+        },
+        onError: (error) {
+          dispose();
+        },
+      );
+
       return true;
     } catch (e) {
+      if (onError != null) {
+        onError(e);
+      }
       return false;
     }
   }
 
   /// Find a server on the local network by broadcasting a discovery message and listening for responses.
   /// Returns the IP address of the server if found, otherwise returns null.
-  Future<String?> findServer() async {
+  Future<String?> findServer({void Function(dynamic)? onError}) async {
     _stateController.add(ClientSocketState.connecting());
-    final serverIp = await discoverOnLan(tryConnect);
+    final serverIp = await discoverOnLan(
+      (ipAddress) => tryConnect(ipAddress, onError: onError),
+    );
     if (serverIp != null) {
       _stateController.add(ClientSocketState.connected());
       return serverIp;
@@ -88,4 +104,6 @@ class LanClient {
     socket = null;
     _stateController.add(ClientSocketState.disconnected('Destoryed'));
   }
+
+  Future<String?> getLocalIp() async => await NetworkInfo().getWifiIP();
 }
