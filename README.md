@@ -14,7 +14,7 @@ Add lan_sharing to your pubspec.yaml:
 
 ```yaml
 dependencies:
-  lan_sharing: ^0.1.0
+  lan_sharing: ^0.1.1
 ```
 
 Then, run flutter pub get to install the package.
@@ -31,7 +31,7 @@ final server = LanServer()..start();
   
 
 // Add an endpoint to the server which will be used by client
-LanServer().addEndpoint('/test', (socket, data) {
+server.addEndpoint('/test', (socket, data) {
   socket.addUtf8String('Hello THIS IS FROM TEST');
 });
 ```
