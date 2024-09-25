@@ -54,7 +54,11 @@ final client = LanClient(
 await client.findServer();
 
 // Send a message to the server
-await client.sendMessage(endpoint: '/test', data: {});
+final response = await client.sendMessage(
+  endpoint: '/test',
+  data: {},
+);
+print(response);
 ```
 
 # Contributions
